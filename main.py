@@ -6,7 +6,8 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 
 from model.tvqa_abc import ABC
 from tvqa_dataset import TVQADataset, pad_collate, preprocess_inputs
@@ -16,7 +17,8 @@ from config import BaseOptions
 def train(opt, dset, model, criterion, optimizer, epoch, previous_best_acc):
     dset.set_mode("train")
     model.train()
-    train_loader = DataLoader(dset, batch_size=opt.bsz, shuffle=True, collate_fn=pad_collate)
+    train_loader = DataLoader(dset, batch_size=opt.bsz,
+                              shuffle=True, collate_fn=pad_collate)
 
     train_loss = []
     valid_acc_log = ["batch_idx\tacc"]
@@ -51,7 +53,8 @@ def train(opt, dset, model, criterion, optimizer, epoch, previous_best_acc):
             valid_acc_log.append(valid_log_str)
             if valid_acc > previous_best_acc:
                 previous_best_acc = valid_acc
-                torch.save(model.state_dict(), os.path.join(opt.results_dir, "best_valid.pth"))
+                torch.save(model.state_dict(), os.path.join(
+                    opt.results_dir, "best_valid.pth"))
             print(" Train Epoch %d loss %.4f acc %.4f Val loss %.4f acc %.4f"
                   % (epoch, train_loss, train_acc, valid_loss, valid_acc))
 
@@ -76,7 +79,8 @@ def validate(opt, dset, model, mode="valid"):
     dset.set_mode(mode)
     torch.set_grad_enabled(False)
     model.eval()
-    valid_loader = DataLoader(dset, batch_size=opt.test_bsz, shuffle=False, collate_fn=pad_collate)
+    valid_loader = DataLoader(
+        dset, batch_size=opt.test_bsz, shuffle=False, collate_fn=pad_collate)
 
     valid_qids = []
     valid_loss = []
@@ -104,7 +108,7 @@ def validate(opt, dset, model, mode="valid"):
 if __name__ == "__main__":
     torch.manual_seed(2018)
     opt = BaseOptions().parse()
-    writer = SummaryWriter(opt.results_dir)
+    writer = SummaryWriter(log_dir=opt.results_dir)
     opt.writer = writer
 
     dset = TVQADataset(opt)
@@ -125,7 +129,8 @@ if __name__ == "__main__":
     for epoch in range(opt.n_epoch):
         if not early_stopping_flag:
             # train for one epoch, valid per n batches, save the log and the best model
-            cur_acc = train(opt, dset, model, criterion, optimizer, epoch, best_acc)
+            cur_acc = train(opt, dset, model, criterion,
+                            optimizer, epoch, best_acc)
 
             # remember best acc
             is_best = cur_acc > best_acc
@@ -136,10 +141,10 @@ if __name__ == "__main__":
                     early_stopping_flag = True
         else:
             print("early stop with valid acc %.4f" % best_acc)
-            opt.writer.export_scalars_to_json(os.path.join(opt.results_dir, "all_scalars.json"))
+            opt.writer.export_scalars_to_json(
+                os.path.join(opt.results_dir, "all_scalars.json"))
             opt.writer.close()
             break  # early stop break
 
         if opt.debug:
             break
-
