@@ -18,7 +18,8 @@ class TVQADataset(Dataset):
         self.vcpt_dict = load_pickle(opt.vcpt_path)
         self.vfeat_load = opt.vid_feat_flag
         if self.vfeat_load:
-            self.vid_h5 = h5py.File(opt.vid_feat_path, "r", driver=opt.h5driver)
+            self.vid_h5 = h5py.File(
+                opt.vid_feat_path, "r", driver=opt.h5driver)
         self.glove_embedding_path = opt.glove_path
         self.normalize_v = opt.normalize_v
         self.with_ts = opt.with_ts
@@ -36,7 +37,8 @@ class TVQADataset(Dataset):
 
         # set entry keys
         if self.with_ts:
-            self.text_keys = ["q", "a0", "a1", "a2", "a3", "a4", "located_sub_text"]
+            self.text_keys = ["q", "a0", "a1", "a2",
+                              "a3", "a4", "located_sub_text"]
         else:
             self.text_keys = ["q", "a0", "a1", "a2", "a3", "a4", "sub_text"]
         self.vcpt_key = "vcpt"
@@ -52,7 +54,8 @@ class TVQADataset(Dataset):
         # build/load vocabulary
         if not files_exist([self.word2idx_path, self.idx2word_path, self.vocab_embedding_path]):
             print("\nNo cache founded.")
-            self.build_word_vocabulary(word_count_threshold=opt.word_count_threshold)
+            self.build_word_vocabulary(
+                word_count_threshold=opt.word_count_threshold)
         else:
             print("\nLoading cache ...")
             self.word2idx = load_pickle(self.word2idx_path)
@@ -104,11 +107,14 @@ class TVQADataset(Dataset):
         # add visual feature
         if self.vfeat_load:
             if self.with_ts:
-                cur_vid_feat = torch.from_numpy(self.vid_h5[cur_vid_name][cur_start:cur_end])
+                cur_vid_feat = torch.from_numpy(
+                    self.vid_h5[cur_vid_name][cur_start:cur_end])
             else:  # handled by vid_path
-                cur_vid_feat = torch.from_numpy(self.vid_h5[cur_vid_name][:480])
+                cur_vid_feat = torch.from_numpy(
+                    self.vid_h5[cur_vid_name][:480])
             if self.normalize_v:
-                cur_vid_feat = nn.functional.normalize(cur_vid_feat, p=2, dim=1)
+                cur_vid_feat = nn.functional.normalize(
+                    cur_vid_feat, p=2, dim=1)
         else:
             cur_vid_feat = torch.zeros([2, 2])  # dummy placeholder
         items.append(cur_vid_feat)
@@ -169,7 +175,8 @@ class TVQADataset(Dataset):
             for w in self.line_to_words(sentence, eos=False, downcase=True):
                 word_counts[w] = word_counts.get(w, 0) + 1
 
-        vocab = [w for w in word_counts if word_counts[w] >= word_count_threshold and w not in self.word2idx.keys()]
+        vocab = [w for w in word_counts if word_counts[w] >=
+                 word_count_threshold and w not in self.word2idx.keys()]
         print("Vocabulary Size %d (<pad> <unk> <eos> excluded) using word_count_threshold %d.\n" %
               (len(vocab), word_count_threshold))
 
@@ -177,17 +184,20 @@ class TVQADataset(Dataset):
         for idx, w in enumerate(vocab):
             self.word2idx[w] = idx + self.offset
             self.idx2word[idx + self.offset] = w
-        print("word2idx size: %d, idx2word size: %d.\n" % (len(self.word2idx), len(self.idx2word)))
+        print("word2idx size: %d, idx2word size: %d.\n" %
+              (len(self.word2idx), len(self.idx2word)))
 
         # Make glove embedding.
-        print("Loading glove embedding at path : %s. \n" % self.glove_embedding_path)
+        print("Loading glove embedding at path : %s. \n" %
+              self.glove_embedding_path)
         glove_full = self.load_glove(self.glove_embedding_path)
         print("Glove Loaded, building word2idx, idx2word mapping. This may take a while.\n")
         glove_matrix = np.zeros([len(self.idx2word), self.embedding_dim])
         glove_keys = glove_full.keys()
         for i in tqdm(range(len(self.idx2word))):
             w = self.idx2word[i]
-            w_embed = glove_full[w] if w in glove_keys else np.random.randn(self.embedding_dim) * 0.4
+            w_embed = glove_full[w] if w in glove_keys else np.random.randn(
+                self.embedding_dim) * 0.4
             glove_matrix[i, :] = w_embed
         self.vocab_embedding = glove_matrix
         print("Vocab embedding size is :", glove_matrix.shape)
@@ -235,7 +245,7 @@ def pad_collate(data):
         return padded_seqs, lengths
 
     # separate source and target sequences
-    column_data = zip(*data)
+    column_data = list(zip(*data))
     text_keys = ["q", "a0", "a1", "a2", "a3", "a4", "sub", "vcpt"]
     label_key = "answer_idx"
     qid_key = "qid"
@@ -290,10 +300,10 @@ if __name__ == "__main__":
     opt = BaseOptions().parse()
 
     dset = TVQADataset(opt, mode="valid")
-    data_loader = DataLoader(dset, batch_size=10, shuffle=False, collate_fn=pad_collate)
+    data_loader = DataLoader(
+        dset, batch_size=10, shuffle=False, collate_fn=pad_collate)
 
     for batch_idx, batch in enumerate(data_loader):
-        model_inputs, targets, qids = preprocess_inputs(batch, opt.max_sub_l, opt.max_vcpt_l, opt.max_vid_l)
+        model_inputs, targets, qids = preprocess_inputs(
+            batch, opt.max_sub_l, opt.max_vcpt_l, opt.max_vid_l)
         break
-
-
