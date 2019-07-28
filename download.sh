@@ -5,20 +5,28 @@ cd data
 
 # download
 echo [log] Start downloading files
-wget http://tvqa.cs.unc.edu/files/tvqa_qa_release.tar.gz -q --show-progress
-wget http://tvqa.cs.unc.edu/files/tvqa_subtitles.tar.gz -q --show-progress
-wget http://tvqa.cs.unc.edu/files/frm_cnt_cache.tar.gz -q --show-progress
-wget http://tvqa.cs.unc.edu/files/det_visual_concepts_hq.pickle.tar.gz -q --show-progress
-wget http://tvqa.cs.unc.edu/files/tvqa_data.md5 -q --show-progress
+# wget http://tvqa.cs.unc.edu/files/tvqa_qa_release.tar.gz -q --show-progress
+# wget http://tvqa.cs.unc.edu/files/tvqa_subtitles.tar.gz -q --show-progress
+# wget http://tvqa.cs.unc.edu/files/frm_cnt_cache.tar.gz -q --show-progress
+# wget http://tvqa.cs.unc.edu/files/det_visual_concepts_hq.pickle.tar.gz -q --show-progress
+# wget http://tvqa.cs.unc.edu/files/tvqa_data.md5 -q --show-progress
+
+cat << EOF | aria2c -i - 
+http://tvqa.cs.unc.edu/files/tvqa_qa_release.tar.gz
+http://tvqa.cs.unc.edu/files/tvqa_subtitles.tar.gz
+http://tvqa.cs.unc.edu/files/frm_cnt_cache.tar.gz
+http://tvqa.cs.unc.edu/files/det_visual_concepts_hq.pickle.tar.gz
+http://tvqa.cs.unc.edu/files/tvqa_data.md5
+EOF
 
 
 # check
-if ! md5sum -c tvqa_data.md5; then
-    echo [Log] Found corrupted file, please re-download the files.
-    exit 1
-else
-    echo [Log] All files are complete.
-fi
+# if ! md5sum -c tvqa_data.md5; then
+#     echo [Log] Found corrupted file, please re-download the files.
+#     exit 1
+# else
+#     echo [Log] All files are complete.
+# fi
 
 # uncompress
 echo [Log] Uncompressing data
@@ -32,7 +40,8 @@ echo -n "Do you wish to download GloVe pretrained word vectors (822MB) as well? 
 read answer
 if [ "$answer" != "${answer#[Yy]}" ] ;then
     echo Yes
-    wget http://nlp.stanford.edu/data/glove.6B.zip -q --show-progress
+    # wget http://nlp.stanford.edu/data/glove.6B.zip -q --show-progress
+    aria2c http://nlp.stanford.edu/data/glove.6B.zip
     unzip glove.6B.zip
 else
     echo No
